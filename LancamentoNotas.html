@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Notas Escolares (0-20)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    background-color: #27ae60;
+    color: white;
+    border-radius: 5px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast.error {
+    background-color: #e74c3c;
+}
+
+.toast.warning {
+    background-color: #f39c12;
+}
+
+.toast i {
+    font-size: 18px;
+}
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --success-color: #27ae60;
+            --success-hover: #219653;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-gray: #f5f5f5;
+            --medium-gray: #ddd;
+            --dark-gray: #2c3e50;
+            --white: #ffffff;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-gray);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: var(--white);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: var(--dark-gray);
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background-color: var(--primary-color);
+        }
+        
+        .filtros {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            align-items: flex-end;
+        }
+        
+        .filtro-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filtro-group label {
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--dark-gray);
+            font-size: 14px;
+        }
+        
+        select, input {
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--medium-gray);
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: var(--white);
+        }
+        
+        .btn-success:hover {
+            background-color: var(--success-hover);
+            transform: translateY(-2px);
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: var(--white);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: var(--white);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+        
+        th, td {
+            border: 1px solid var(--medium-gray);
+            padding: 12px 15px;
+            text-align: center;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: var(--dark-gray);
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        input[type="number"] {
+            width: 60px;
+            text-align: center;
+            padding: 8px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-salvo {
+            background-color: var(--success-color);
+        }
+        
+        .status-pendente {
+            background-color: var(--warning-color);
+        }
+        
+        .status-container {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .search-container input {
+            flex: 1;
+            max-width: 300px;
+            padding: 10px 15px;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: var(--white);
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 22px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .modal-title {
+            margin-top: 0;
+            color: var(--dark-gray);
+            border-bottom: 1px solid var(--medium-gray);
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .media-anual {
+            font-weight: bold;
+            background-color: #e8f4fc;
+        }
+        
+        .media-trimestre {
+            font-weight: 500;
+        }
+        
+        .grupo-selector {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .grupo-selector label {
+            margin-right: 10px;
+            font-weight: 500;
+        }
+        
+        .grupo-option {
+            margin-right: 15px;
+        }
+        
+        .view-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .view-option {
+            padding: 8px 15px;
+            background-color: var(--light-gray);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .view-option.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .aproveitamento {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--medium-gray);
+            background-color: white;
+            cursor: pointer;
+            min-width: 120px;
+        }
+        
+        .aprovado { background-color: #d4edda; }
+        .reprovado { background-color: #f8d7da; }
+        .dispensado { background-color: #fff3cd; }
+        .excluido { background-color: #d6d8d9; }
+        
+        .exame-input {
+            width: 50px;
+            text-align: center;
+            padding: 5px;
+            margin: 0 2px;
+        }
+        
+        @media (max-width: 768px) {
+            .filtros {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .view-selector {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-graduation-cap"></i> Sistema de Notas Escolares</h1>
+        
+        <div class="filtros">
+            <div class="filtro-group">
+                <label for="turma"><i class="fas fa-users"></i> Classe</label>
+                <select id="turma">
+                    <option value="">Selecione a Classe</option>
+                    <option value="1">1ª Classe</option>
+                    <option value="2">2ª Classe</option>
+                    <option value="3">3ª Classe</option>
+                    <option value="4">4ª Classe</option>
+                    <option value="5">5ª Classe</option>
+                    <option value="6">6ª Classe</option>
+                    <option value="7">7ª Classe</option>
+                    <option value="8">8ª Classe</option>
+                    <option value="9">9ª Classe</option>
+                    <option value="10">10ª Classe</option>
+                    <option value="11">11ª Classe</option>
+                    <option value="12">12ª Classe</option>
+                </select>
+            </div>
+            <div class="filtro-group">
+                <label for="grupo"><i class="fas fa-layer-group"></i> Grupo</label>
+                <div id="grupo-selector" class="grupo-selector">
+                    <label>Selecione o Grupo:</label>
+                    <span class="grupo-option">
+                        <input type="radio" id="grupo-a" name="grupo" value="A" checked>
+                        <label for="grupo-a">Grupo A</label>
+                    </span>
+                    <span class="grupo-option">
+                        <input type="radio" id="grupo-b" name="grupo" value="B">
+                        <label for="grupo-b">Grupo B</label>
+                    </span>
+                    <span class="grupo-option">
+                        <input type="radio" id="grupo-c" name="grupo" value="C">
+                        <label for="grupo-c">Grupo C</label>
+                    </span>
+                </div>
+            </div>
+            <div class="filtro-group">
+                <label for="disciplina"><i class="fas fa-book"></i> Disciplina</label>
+                <select id="disciplina" disabled>
+                    <option value="">Primeiro selecione a classe</option>
+                </select>
+            </div>
+            <div class="filtro-group">
+                <label for="trimestre"><i class="fas fa-calendar-alt"></i> Trimestre</label>
+                <select id="trimestre">
+                    <option value="">Selecione o Trimestre</option>
+                    <option value="1">1º Trimestre</option>
+                    <option value="2">2º Trimestre</option>
+                    <option value="3">3º Trimestre</option>
+                </select>
+            </div>
+            <button id="carregar" class="btn-primary" disabled>
+                <i class="fas fa-search"></i> Carregar Alunos
+            </button>
+        </div>
+        <div class="search-container">
+            <input type="text" id="pesquisar-aluno" placeholder="Pesquisar aluno..." disabled>
+            <button id="btn-pesquisar" class="btn-primary" disabled>
+                <i class="fas fa-search"></i> Pesquisar
+            </button>
+        </div>
+        <div class="table-container" id="tabela-container" style="display: none;">
+            <h3 id="titulo-tabela"></h3>
+            <div class="view-selector">
+                <div class="view-option active" data-view="trimestral">
+                    <i class="fas fa-calendar-week"></i> Visão Trimestral
+                </div>
+                <div class="view-option" data-view="anual">
+                    <i class="fas fa-calendar-alt"></i> Visão Anual
+                </div>
+            </div>
+            <div id="trimestral-view" class="tab-content active">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th>Nome do Aluno</th>
+                            <th>1º Teste</th>
+                            <th>2º Teste</th>
+                            <th>3º Teste</th>
+                            <th>Média Teste</th>
+                            <th>Faltas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela-trimestral">
+                    </tbody>
+                </table>
+            </div>
+            <div id="anual-view" class="tab-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th>Nome do Aluno</th>
+                            <th>1º Trimestre</th>
+                            <th>2º Trimestre</th>
+                            <th>3º Trimestre</th>
+                            <th>Média Anual</th>
+                            <th>Exame Normal</th>
+                            <th>Exame 2ª Época</th>
+                            <th>Aproveitamento</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela-anual">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="status-container">
+                <span class="status-indicator status-pendente"></span>
+                <span id="status-text">Alterações não salvas</span>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="btn-limpar" class="btn-warning">
+                    <i class="fas fa-eraser"></i> Limpar
+                </button>
+                <button id="btn-salvar" class="btn-success">
+                    <i class="fas fa-save"></i> Salvar Notas
+                </button>
+                <button id="btn-exportar" class="btn-primary">
+                    <i class="fas fa-file-export"></i> Exportar
+                </button>
+            </div>
+        </div>
+    </div>
+     <div class="modal" id="modal-confirmacao">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 class="modal-title" id="confirmacao-titulo">Confirmar Ação</h3>
+            <p id="confirmacao-mensagem"></p>
+            <div class="form-actions">
+                <button id="btn-cancelar-confirm" class="btn-warning">Cancelar</button>
+                <button id="btn-confirmar-acao" class="btn-success">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const disciplinasBase = {
+            '1': ['portugues', 'matematica'],
+            '2': ['portugues', 'matematica'],
+            '3': ['portugues', 'matematica','educacao_fisica'],
+            '4': ['portugues', 'matematica', 'ciencias Sociais','ciencias Naturais', 'educacao_fisica'],
+            '5': ['portugues', 'matematica', 'ciencias Sociais','ciencias Naturais', 'educacao_visual','educacao_fisica'],
+            '6': ['portugues', 'matematica', 'ciencias Sociais','ciencias Naturais', 'educacao_visual','educacao_fisica'],
+            '7': ['portugues', 'matematica', 'historia', 'geografia', 'ciencias', 'educacao_visual','educacao_fisica'],
+            '8': ['portugues', 'matematica', 'historia', 'geografia', 'ciencias', 'educacao_visual', 'frances','educacao_fisica'],
+            '9': ['portugues', 'matematica', 'historia', 'geografia', 'ciencias', 'educacao_visual', 'frances','educacao_fisica'],
+            '10': ['portugues', 'matematica', 'historia', 'geografia', 'ciencias', 'educacao_visual', 'frances','educacao_fisica'],
+            '11': {
+                'A': ['portugues', 'matematica', 'historia', 'geografia', 'frances', 'ingles', 'filosofia','educacao_fisica'],
+                'B': ['portugues', 'matematica','Biologia', 'quimica','Fisica', 'ingles', 'filosofia','educacao_fisica'],
+                'C': ['portugues', 'matematica', 'fisica', 'desenho', 'ingles', 'filosofia','educacao_fisica']
+            },
+            '12': {
+                'A': ['portugues', 'matematica', 'historia', 'geografia', 'frances', 'ingles', 'filosofia','educacao_fisica'],
+                'B': ['portugues', 'matematica','Biologia', 'quimica','Fisica', 'ingles', 'filosofia','educacao_fisica'],
+                'C': ['portugues', 'matematica', 'fisica', 'desenho', 'ingles', 'filosofia','educacao_fisica']
+            }
+        };
+
+        const nomesDisciplinas = {
+            'portugues': 'Português',
+            'matematica': 'Matemática',
+            'estudo_meio': 'Estudo do Meio',
+            'historia': 'História',
+            'geografia': 'Geografia',
+            'ciencias': 'Ciências Naturais',
+            'educacao_visual': 'Educação Visual',
+            'frances': 'Francês',
+            'ingles': 'Inglês',
+            'filosofia': 'Filosofia',
+            'quimica': 'Química',
+            'fisica': 'Física',
+            'desenho': 'Desenho'
+        };
+
+        const classesComExames = ['2', '5', '7', '10', '12'];
+
+        let alunosData = [];
+        let hasUnsavedChanges = false;
+        
+        const elementos = {
+            turma: document.getElementById('turma'),
+            grupoSelector: document.getElementById('grupo-selector'),
+            disciplina: document.getElementById('disciplina'),
+            trimestre: document.getElementById('trimestre'),
+            carregarBtn: document.getElementById('carregar'),
+            pesquisarInput: document.getElementById('pesquisar-aluno'),
+            pesquisarBtn: document.getElementById('btn-pesquisar'),
+            tabelaContainer: document.getElementById('tabela-container'),
+            tituloTabela: document.getElementById('titulo-tabela'),
+            corpoTabelaTrimestral: document.getElementById('corpo-tabela-trimestral'),
+            corpoTabelaAnual: document.getElementById('corpo-tabela-anual'),
+            statusText: document.getElementById('status-text'),
+            salvarBtn: document.getElementById('btn-salvar'),
+            limparBtn: document.getElementById('btn-limpar'),
+            exportarBtn: document.getElementById('btn-exportar'),
+            modalConfirmacao: document.getElementById('modal-confirmacao'),
+            confirmacaoTitulo: document.getElementById('confirmacao-titulo'),
+            confirmacaoMensagem: document.getElementById('confirmacao-mensagem'),
+            viewOptions: document.querySelectorAll('.view-option'),
+            tabContents: document.querySelectorAll('.tab-content')
+        };
+        
+        elementos.turma.addEventListener('change', function() {
+            const classe = this.value;
+            
+            if (classe === '11' || classe === '12') {
+                elementos.grupoSelector.style.display = 'block';
+            } else {
+                elementos.grupoSelector.style.display = 'none';
+            }
+            
+            atualizarDisciplinas();
+        });
+        
+        document.querySelectorAll('input[name="grupo"]').forEach(radio => {
+            radio.addEventListener('change', atualizarDisciplinas);
+        });
+        
+        elementos.disciplina.addEventListener('change', atualizarBotoes);
+        elementos.trimestre.addEventListener('change', atualizarBotoes);
+        elementos.carregarBtn.addEventListener('click', carregarAlunos);
+        elementos.pesquisarBtn.addEventListener('click', pesquisarAlunos);
+        elementos.pesquisarInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') pesquisarAlunos();
+        });
+        elementos.salvarBtn.addEventListener('click', salvarNotas);
+        elementos.limparBtn.addEventListener('click', confirmarLimpar);
+        elementos.exportarBtn.addEventListener('click', exportarDados);
+        
+        elementos.viewOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                elementos.viewOptions.forEach(opt => opt.classList.remove('active'));
+              
+                this.classList.add('active');
+                
+                elementos.tabContents.forEach(content => content.classList.remove('active'));
+                
+                const view = this.getAttribute('data-view');
+                document.getElementById(`${view}-view`).classList.add('active');
+            });
+        });
+        
+        document.getElementById('btn-cancelar-confirm').addEventListener('click', function() {
+            elementos.modalConfirmacao.style.display = 'none';
+        });
+        
+        document.getElementById('btn-confirmar-acao').addEventListener('click', function() {
+            const action = this.getAttribute('data-action');
+            
+            if (action === 'limpar') {
+                limparTabela();
+            }
+            
+            elementos.modalConfirmacao.style.display = 'none';
+        });
+        function mostrarNotificacao(mensagem, tipo = 'sucesso') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${tipo === 'erro' ? 'error' : tipo === 'aviso' ? 'warning' : ''}`;
+    toast.innerHTML = `
+        <i class="fas ${tipo === 'sucesso' ? 'fa-check-circle' : tipo === 'erro' ? 'fa-times-circle' : 'fa-exclamation-circle'}"></i>
+        ${mensagem}
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+        function atualizarDisciplinas() {
+            const classeSelecionada = elementos.turma.value;
+            const selectDisciplina = elementos.disciplina;
+            
+            selectDisciplina.innerHTML = '<option value="">Selecione a Disciplina</option>';
+            
+            if (classeSelecionada) {
+                
+                let grupo = null;
+                if (classeSelecionada === '11' || classeSelecionada === '12') {
+                    grupo = document.querySelector('input[name="grupo"]:checked').value;
+                }
+                
+                let disciplinas = [];
+                
+                if (classeSelecionada === '11' || classeSelecionada === '12') {
+                    disciplinas = disciplinasBase[classeSelecionada][grupo] || [];
+                } else {
+                    disciplinas = disciplinasBase[classeSelecionada] || [];
+                }
+                
+                selectDisciplina.disabled = false;
+                
+                disciplinas.forEach(codDisciplina => {
+                    const option = document.createElement('option');
+                    option.value = codDisciplina;
+                    option.textContent = nomesDisciplinas[codDisciplina];
+                    selectDisciplina.appendChild(option);
+                });
+            } else {
+                selectDisciplina.disabled = true;
+                selectDisciplina.innerHTML = '<option value="">Primeiro selecione a classe</option>';
+            }
+            
+            atualizarBotoes();
+        }
+        
+        function atualizarBotoes() {
+            const temClasse = !!elementos.turma.value;
+            const temDisciplina = !!elementos.disciplina.value;
+            const temTrimestre = !!elementos.trimestre.value;
+            
+            elementos.carregarBtn.disabled = !(temClasse && temDisciplina && temTrimestre);
+            
+            elementos.pesquisarInput.disabled = elementos.corpoTabelaTrimestral.children.length === 0;
+            elementos.pesquisarBtn.disabled = elementos.corpoTabelaTrimestral.children.length === 0;
+        }
+        function carregarAlunos() {
+            const turma = elementos.turma.value;
+            const disciplina = elementos.disciplina.value;
+            const trimestre = elementos.trimestre.value;
+            
+            if (!turma || !disciplina || !trimestre) {
+                alert('Por favor, selecione todos os filtros!');
+                return;
+            }
+            alunosData = simularAlunos(turma);
+            
+            const nomeDisciplina = nomesDisciplinas[disciplina];
+            elementos.tituloTabela.textContent = 
+                `${elementos.turma.options[elementos.turma.selectedIndex].text} | ${nomeDisciplina} | ${trimestre}º Trimestre`;
+            
+            preencherTabelas(alunosData);
+            
+            elementos.tabelaContainer.style.display = 'block';
+            
+            elementos.pesquisarInput.disabled = false;
+            elementos.pesquisarBtn.disabled = false;
+            hasUnsavedChanges = false;
+            atualizarStatus();
+        }
+        
+        function simularAlunos(turma) {
+           
+            const nomes = [
+                'Alima Latibo', 'Assma Satar', 'Cosme Militao', 'Davide Francisco', 
+                'Edmilson Peleme', 'Elson Issa', 'Gildo Cumbane', 'Helena Martins',
+                'Ivone Mafalda', 'Jasmin Egas', 'Luisa Ampale', 'Mariano Lima','Sumaia Abdulai'
+
+            ];
+            return nomes.map((nome, index) => ({
+                id: `${turma}-${index + 1}`,
+                nome: nome,
+                notas: {
+                    '1': Math.floor(Math.random() * 21), 
+                    '2': Math.floor(Math.random() * 21),
+                    '3': Math.floor(Math.random() * 21)
+                },
+                exames: {
+                    normal: null,
+                    segundaEpoca: null
+                },
+                faltas: Math.floor(Math.random() * 5),
+                aproveitamento: ['aprovado', 'reprovado', 'dispensado', 'excluido'][index % 4]
+            }));
+        }
+        
+        function preencherTabelas(alunos) {
+            elementos.corpoTabelaTrimestral.innerHTML = '';
+            elementos.corpoTabelaAnual.innerHTML = '';
+            
+            if (alunos.length === 0) {
+                elementos.corpoTabelaTrimestral.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="no-results">
+                            Nenhum aluno encontrado para os filtros selecionados
+                        </td>
+                    </tr>
+                `;
+                elementos.corpoTabelaAnual.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="no-results">
+                            Nenhum aluno encontrado para os filtros selecionados
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            const turmaAtual = elementos.turma.value;
+            const temExames = classesComExames.includes(turmaAtual);
+            alunos.forEach((aluno, index) => {
+                const mediaTrimestre = calcularMedia(aluno.notas['1'], aluno.notas['2'], aluno.notas['3']);
+                const mediaAnual = calcularMediaAnual(aluno.notas);
+                const rowTrimestral = document.createElement('tr');
+                rowTrimestral.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${aluno.nome}</td>
+                    <td><input type="number" min="0" max="20" step="0.5" class="nota" value="${aluno.notas['1']}" data-aluno="${aluno.id}" data-trimestre="1"></td>
+                    <td><input type="number" min="0" max="20" step="0.5" class="nota" value="${aluno.notas['2']}" data-aluno="${aluno.id}" data-trimestre="2"></td>
+                    <td><input type="number" min="0" max="20" step="0.5" class="nota" value="${aluno.notas['3']}" data-aluno="${aluno.id}" data-trimestre="3"></td>
+                    <td class="media-trimestre">${mediaTrimestre.toFixed(1)}</td>
+                    <td><input type="number" min="0" class="faltas" value="${aluno.faltas}" data-aluno="${aluno.id}"></td>
+                `;
+                elementos.corpoTabelaTrimestral.appendChild(rowTrimestral);
+                const rowAnual = document.createElement('tr');
+                const camposExame = temExames ? `
+                    <td><input type="number" min="0" max="20" step="0.5" class="exame-normal" value="${aluno.exames.normal || ''}" data-aluno="${aluno.id}"></td>
+                    <td><input type="number" min="0" max="20" step="0.5" class="exame-segunda" value="${aluno.exames.segundaEpoca || ''}" data-aluno="${aluno.id}"></td>
+                ` : `
+                    <td>-</td>
+                    <td>-</td>
+                `;
+                
+                rowAnual.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${aluno.nome}</td>
+                    <td>${aluno.notas['1'].toFixed(1)}</td>
+                    <td>${aluno.notas['2'].toFixed(1)}</td>
+                    <td>${aluno.notas['3'].toFixed(1)}</td>
+                    <td class="media-anual">${mediaAnual.toFixed(1)}</td>
+                    ${camposExame}
+                    <td>
+                        <select class="aproveitamento" data-aluno="${aluno.id}">
+                            <option value="">-- Status --</option>
+                            <option value="aprovado" ${aluno.aproveitamento === 'aprovado' ? 'selected' : ''}>Aprovado</option>
+                            <option value="reprovado" ${aluno.aproveitamento === 'reprovado' ? 'selected' : ''}>Reprovado</option>
+                            <option value="dispensado" ${aluno.aproveitamento === 'dispensado' ? 'selected' : ''}>Dispensado</option>
+                            <option value="excluido" ${aluno.aproveitamento === 'excluido' ? 'selected' : ''}>Excluído</option>
+                        </select>
+                    </td>
+                `;
+                
+                if (aluno.aproveitamento) {
+                    const select = rowAnual.querySelector('.aproveitamento');
+                    if (select) select.classList.add(aluno.aproveitamento);
+                }
+                
+                elementos.corpoTabelaAnual.appendChild(rowAnual);
+            });
+            document.querySelectorAll('.nota').forEach(input => {
+                input.addEventListener('change', function() {
+                    const alunoId = this.getAttribute('data-aluno');
+                    const trimestre = this.getAttribute('data-trimestre');
+                    const valor = parseFloat(this.value) || 0;
+                    
+                    const aluno = alunosData.find(a => a.id === alunoId);
+                    if (aluno) {
+                        aluno.notas[trimestre] = valor;
+                    }
+                    
+                    const row = this.closest('tr');
+                    const notas = [
+                        parseFloat(row.querySelector('[data-trimestre="1"]').value) || 0,
+                        parseFloat(row.querySelector('[data-trimestre="2"]').value) || 0,
+                        parseFloat(row.querySelector('[data-trimestre="3"]').value) || 0
+                    ];
+                    
+                    const mediaTrim = calcularMedia(...notas);
+                    row.querySelector('.media-trimestre').textContent = mediaTrim.toFixed(1);
+                    
+                    const alunoIndex = alunosData.findIndex(a => a.id === alunoId);
+                    if (alunoIndex !== -1) {
+                        const rowAnual = elementos.corpoTabelaAnual.children[alunoIndex];
+                        if (rowAnual) {
+                            rowAnual.children[parseInt(trimestre)+1].textContent = valor.toFixed(1);
+                            const mediaAnual = calcularMediaAnual({
+                                '1': parseFloat(row.querySelector('[data-trimestre="1"]').value) || 0,
+                                '2': parseFloat(row.querySelector('[data-trimestre="2"]').value) || 0,
+                                '3': parseFloat(row.querySelector('[data-trimestre="3"]').value) || 0
+                            });
+                            rowAnual.querySelector('.media-anual').textContent = mediaAnual.toFixed(1);
+                        }
+                    }
+                    
+                    hasUnsavedChanges = true;
+                    atualizarStatus();
+                });
+            });
+            
+            document.querySelectorAll('.faltas').forEach(input => {
+                input.addEventListener('change', function() {
+                    const alunoId = this.getAttribute('data-aluno');
+                    const valor = parseInt(this.value) || 0;
+                    
+                    const aluno = alunosData.find(a => a.id === alunoId);
+                    if (aluno) {
+                        aluno.faltas = valor;
+                    }
+                                        const alunoIndex = alunosData.findIndex(a => a.id === alunoId);
+                    if (alunoIndex !== -1) {
+                        const rowAnual = elementos.corpoTabelaAnual.children[alunoIndex];
+                        if (rowAnual) {
+                            rowAnual.children[parseInt(trimestre)+1].textContent = valor.toFixed(1);
+                            const mediaAnual = calcularMediaAnual({
+                                '1': parseFloat(row.querySelector('[data-trimestre="1"]').value) || 0,
+                                '2': parseFloat(row.querySelector('[data-trimestre="2"]').value) || 0,
+                                '3': parseFloat(row.querySelector('[data-trimestre="3"]').value) || 0
+                            });
+                            rowAnual.querySelector('.media-anual').textContent = mediaAnual.toFixed(1);
+                        }
+                    }
+                    
+                    hasUnsavedChanges = true;
+                    atualizarStatus();
+                });
+            });
+            
+            if (classesComExames.includes(elementos.turma.value)) {
+                document.querySelectorAll('.exame-normal').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const alunoId = this.getAttribute('data-aluno');
+                        const valor = parseFloat(this.value) || null;
+                        
+                        const aluno = alunosData.find(a => a.id === alunoId);
+                        if (aluno) {
+                            aluno.exames.normal = valor;
+                            hasUnsavedChanges = true;
+                            atualizarStatus();
+                        }
+                    });
+                });
+                
+                document.querySelectorAll('.exame-segunda').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const alunoId = this.getAttribute('data-aluno');
+                        const valor = parseFloat(this.value) || null;
+                        
+                        const aluno = alunosData.find(a => a.id === alunoId);
+                        if (aluno) {
+                            aluno.exames.segundaEpoca = valor;
+                            hasUnsavedChanges = true;
+                            atualizarStatus();
+                        }
+                    });
+                });
+            }
+            
+            document.querySelectorAll('.aproveitamento').forEach(select => {
+                select.addEventListener('change', function() {
+                    const alunoId = this.getAttribute('data-aluno');
+                    const valor = this.value;
+                    
+                    this.classList.remove('aprovado', 'reprovado', 'dispensado', 'excluido');
+                    
+                    if (valor) {
+                        this.classList.add(valor);
+                    }
+                    
+                    const aluno = alunosData.find(a => a.id === alunoId);
+                    if (aluno) {
+                        aluno.aproveitamento = valor;
+                    }
+                    
+                    hasUnsavedChanges = true;
+                    atualizarStatus();
+                });
+            });
+        }
+        
+        function calcularMedia(...notas) {
+            const notasValidas = notas.filter(nota => nota !== null && !isNaN(nota));
+            if (notasValidas.length === 0) return 0;
+            
+            const soma = notasValidas.reduce((total, nota) => total + nota, 0);
+            return soma / notasValidas.length;
+        }
+        
+        function calcularMediaAnual(notas) {
+            return calcularMedia(notas['1'], notas['2'], notas['3']);
+        }
+        
+        function pesquisarAlunos() {
+            const termo = elementos.pesquisarInput.value.toLowerCase();
+            
+            if (!termo) {
+                preencherTabelas(alunosData);
+                return;
+            }
+            
+            const alunosFiltrados = alunosData.filter(aluno => 
+                aluno.nome.toLowerCase().includes(termo)
+            );
+            
+            preencherTabelas(alunosFiltrados);
+        }
+        
+        function atualizarStatus() {
+            if (hasUnsavedChanges) {
+                elementos.statusText.textContent = 'Alterações não salvas';
+                document.querySelector('.status-indicator').className = 'status-indicator status-pendente';
+            } else {
+                elementos.statusText.textContent = 'Todas as alterações foram salvas';
+                document.querySelector('.status-indicator').className = 'status-indicator status-salvo';
+            }
+        }
+        
+        function confirmarLimpar() {
+            if (hasUnsavedChanges) {
+                elementos.confirmacaoTitulo.textContent = 'Confirmar Limpeza';
+                elementos.confirmacaoMensagem.textContent = 'Você tem alterações não salvas. Tem certeza que deseja limpar a tabela?';
+                document.getElementById('btn-confirmar-acao').setAttribute('data-action', 'limpar');
+                elementos.modalConfirmacao.style.display = 'flex';
+            } else {
+                limparTabela();
+            }
+        }
+        
+        function limparTabela() {
+            elementos.corpoTabelaTrimestral.innerHTML = '';
+            elementos.corpoTabelaAnual.innerHTML = '';
+            elementos.tabelaContainer.style.display = 'none';
+            elementos.pesquisarInput.value = '';
+            alunosData = [];
+            hasUnsavedChanges = false;
+            atualizarStatus();
+        }
+        
+        function salvarNotas() {
+            console.log('Dados salvos:', alunosData);
+              setTimeout(() => {
+                hasUnsavedChanges = false;
+                atualizarStatus();
+                alert('Notas salvas com sucesso!');
+            }, 1000);
+        }
+        
+        function exportarDados() {
+            const turma = elementos.turma.options[elementos.turma.selectedIndex].text;
+            const disciplina = nomesDisciplinas[elementos.disciplina.value];
+            const trimestre = elementos.trimestre.value;
+            
+            const dadosExportacao = {
+                turma,
+                disciplina,
+                trimestre,
+                alunos: alunosData
+            };
+            function exportarDados() {
+    const turma = elementos.turma.options[elementos.turma.selectedIndex].text;
+    const disciplina = nomesDisciplinas[elementos.disciplina.value];
+    const trimestre = elementos.trimestre.value;
+    
+    const modalContent = `
+        <span class="close-modal">&times;</span>
+        <h3 class="modal-title">Exportar Dados</h3>
+        <p>Selecione o formato de exportação para ${turma} - ${disciplina}:</p>
+        <div class="export-options">
+            <button id="export-csv" class="btn-primary">
+                <i class="fas fa-file-csv"></i> CSV
+            </button>
+            <button id="export-excel" class="btn-success">
+                <i class="fas fa-file-excel"></i> Excel
+            </button>
+            <button id="export-pdf" class="btn-danger">
+                <i class="fas fa-file-pdf"></i> PDF
+            </button>
+        </div>
+    `;
+    
+    elementos.confirmacaoTitulo.innerHTML = '';
+    elementos.confirmacaoMensagem.innerHTML = modalContent;
+    elementos.modalConfirmacao.style.display = 'flex';
+    
+    document.querySelector('#modal-confirmacao .close-modal').addEventListener('click', function() {
+        elementos.modalConfirmacao.style.display = 'none';
+    });
+    document.getElementById('export-csv')?.addEventListener('click', () => exportarParaCSV(turma, disciplina));
+    document.getElementById('export-excel')?.addEventListener('click', () => exportarParaExcel(turma, disciplina));
+    document.getElementById('export-pdf')?.addEventListener('click', () => exportarParaPDF(turma, disciplina));
+}
+function exportarParaExcel(turma, disciplina) {
+    if (typeof XLSX === 'undefined') {
+        alert('Biblioteca SheetJS não carregada. Carregue a biblioteca primeiro.');
+        return;
+    }
+    const dados = alunosData.map((aluno, index) => ({
+        'N°': index + 1,
+        'Nome': aluno.nome,
+        '1º Trim': aluno.notas['1'],
+        '2º Trim': aluno.notas['2'],
+        '3º Trim': aluno.notas['3'],
+        'Média': calcularMediaAnual(aluno.notas),
+        'Faltas': aluno.faltas,
+        'Status': aluno.aproveitamento || 'N/D'
+    }));
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Notas");
+    XLSX.writeFile(wb, `notas_${turma}_${disciplina}.xlsx`);
+    elementos.modalConfirmacao.style.display = 'none';
+}
+function exportarParaPDF(turma, disciplina) {
+    if (typeof jsPDF === 'undefined') {
+        alert('Biblioteca jsPDF não carregada. Carregue a biblioteca primeiro.');
+        return;
+    }
+    
+    const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm'
+    });
+    
+    doc.setFontSize(16);
+    doc.text(`Relatório de Notas - ${turma} - ${disciplina}`, 105, 15, { align: 'center' });
+    
+    const headers = [
+        { title: "N°", dataKey: "numero" },
+        { title: "Nome do Aluno", dataKey: "nome" },
+        { title: "1º Trim", dataKey: "trim1" },
+        { title: "2º Trim", dataKey: "trim2" },
+        { title: "3º Trim", dataKey: "trim3" },
+        { title: "Média", dataKey: "media" },
+        { title: "Faltas", dataKey: "faltas" },
+        { title: "Status", dataKey: "status" }
+    ];
+    
+    const dados = alunosData.map((aluno, index) => ({
+        numero: index + 1,
+        nome: aluno.nome,
+        trim1: aluno.notas['1'].toFixed(1),
+        trim2: aluno.notas['2'].toFixed(1),
+        trim3: aluno.notas['3'].toFixed(1),
+        media: calcularMediaAnual(aluno.notas).toFixed(1),
+        faltas: aluno.faltas,
+        status: aluno.aproveitamento || 'N/D'
+    }));
+    
+    doc.autoTable({
+        head: [headers.map(h => h.title)],
+        body: dados.map(row => headers.map(h => row[h.dataKey])),
+        startY: 25,
+        styles: {
+            fontSize: 10,
+            cellPadding: 2,
+            overflow: 'linebreak'
+        },
+        headerStyles: {
+            fillColor: [52, 152, 219],
+            textColor: 255,
+            fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+            fillColor: [240, 240, 240]
+        }
+    });
+    
+    const date = new Date().toLocaleDateString();
+    doc.setFontSize(10);
+    doc.text(`Gerado em ${date} - Sistema de Notas Escolares`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+    
+    doc.save(`notas_${turma}_${disciplina}.pdf`);
+    elementos.modalConfirmacao.style.display = 'none';
+}
+        }
+    </script>
+</body>
+</html>
